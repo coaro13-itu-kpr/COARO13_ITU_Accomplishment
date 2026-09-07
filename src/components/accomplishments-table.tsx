@@ -16,22 +16,89 @@ interface AccomplishmentsTableProps {
   onDelete: (id: string) => Promise<void>;
 }
 
+const CATEGORIES: { [key: string]: string[] } = {
+  'Technical Services': [
+    'Technical Review and Inspection',
+    'Property Appraisal',
+    'Submission of Annual Audit Reports for Publication',
+    'Submission of Compliance Audit Reports for Publication',
+    'Submission of SALN of all COA Caraga Personnel',
+    'Other Technical Audit Activities',
+  ],
+  'General Administration and Support': [
+    'Assistance in defining IT specifications',
+    'Server Administration and Maintenance',
+    'Network Administration and Maintenance',
+    'Voice over Internet Protocol (VoIP) installation/configuration, administration and maintenance',
+    'Internet configuration, connection and other technical assistance related to internet',
+    'Database backup',
+    'Biometric Machine Maintenance and System Administration',
+    'Troubleshooting - Network Printing Problems',
+    'Troubleshooting - Microsoft Office Problems',
+    'Troubleshooting - Computer Virus Problems',
+    'Troubleshooting - Operating System Problems',
+    'Troubleshooting - Access Point Problems',
+    'Troubleshooting - Local Area Network Problems',
+    'Troubleshooting - CAMS Problems',
+    'Troubleshooting - VoIP Problems',
+    'Troubleshooting - Internet Connectivity Problems',
+    'Troubleshooting - Daily Time Record Updating',
+    'Troubleshooting - Initial Setup of New Desktop/Laptop',
+    'Troubleshooting - Cashier System (WINACIC DISC System) Problems',
+    'Website Content Management',
+    'Walk-in client queries',
+    'Others',
+  ],
+  'eNGAS and eBudget': [
+    'eNGAS and eBudget Support',
+    'eNGAS and eBudget Roll-out',
+  ],
+  'Support during Meetings/Events': [
+    'Setup Audio/Visual/Zoom Meetings',
+  ],
+  'Other Activities/Special Assignments': [
+    'Resource Person/Assistant RPs for eNGAS and eBudget Functional Training and Other IT Trainings',
+  ],
+};
+
+function getMainCategory(subCategory: string): string {
+  for (const [mainCat, subCats] of Object.entries(CATEGORIES)) {
+    if (subCats.includes(subCategory)) {
+      return mainCat;
+    }
+  }
+  return '';
+}
+
 export function AccomplishmentsTable({ accomplishments, onDelete }: AccomplishmentsTableProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [filterStaff, setFilterStaff] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
+  const [filterMainCategory, setFilterMainCategory] = useState('');
+  const [filterSubCategory, setFilterSubCategory] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
 
   const uniqueStaff = [...new Set(accomplishments.map((a) => a.staff_name))].sort();
-  const uniqueCategories = [...new Set(accomplishments.map((a) => a.category))].sort();
+  const mainCategories = Object.keys(CATEGORIES);
+  const subCategories = filterMainCategory ? CATEGORIES[filterMainCategory] : [];
+  const uniqueSubCategories = [...new Set(accomplishments.map((a) => a.category))].sort();
+
+  const [filterSearch, setFilterSearch] = useState('');
 
   const filtered = accomplishments.filter((a) => {
     if (filterStaff && a.staff_name !== filterStaff) return false;
-    if (filterCategory && a.category !== filterCategory) return false;
+    if (filterMainCategory && getMainCategory(a.category) !== filterMainCategory) return false;
+    if (filterSubCategory && a.category !== filterSubCategory) return false;
     if (filterDateFrom && a.accomplishment_date < filterDateFrom) return false;
     if (filterDateTo && a.accomplishment_date > filterDateTo) return false;
+    if (filterSearch) {
+      const searchLower = filterSearch.toLowerCase();
+      if (!a.description.toLowerCase().includes(searchLower) &&
+          !a.staff_name.toLowerCase().includes(searchLower)) {
+        return false;
+      }
+    }
     return true;
   });
 
@@ -59,7 +126,18 @@ export function AccomplishmentsTable({ accomplishments, onDelete }: Accomplishme
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-slate-200 p-4">
+      <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-3">
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Search</label>
+          <input
+            type="text"
+            placeholder="Search by description or staff name..."
+            value={filterSearch}
+            onChange={(e) => setFilterSearch(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Staff</label>
@@ -80,14 +158,34 @@ export function AccomplishmentsTable({ accomplishments, onDelete }: Accomplishme
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Category</label>
             <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
+              value={filterMainCategory}
+              onChange={(e) => {
+                setFilterMainCategory(e.target.value);
+                setFilterSubCategory('');
+              }}
               className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All categories</option>
-              {uniqueCategories.map((c) => (
+              {mainCategories.map((c) => (
                 <option key={c} value={c}>
                   {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Sub-Category</label>
+            <select
+              value={filterSubCategory}
+              onChange={(e) => setFilterSubCategory(e.target.value)}
+              disabled={!filterMainCategory}
+              className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100"
+            >
+              <option value="">All sub-categories</option>
+              {subCategories.map((sc) => (
+                <option key={sc} value={sc}>
+                  {sc}
                 </option>
               ))}
             </select>
@@ -112,23 +210,25 @@ export function AccomplishmentsTable({ accomplishments, onDelete }: Accomplishme
               className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-
-          {(filterStaff || filterCategory || filterDateFrom || filterDateTo) && (
-            <div className="flex items-end">
-              <button
-                onClick={() => {
-                  setFilterStaff('');
-                  setFilterCategory('');
-                  setFilterDateFrom('');
-                  setFilterDateTo('');
-                }}
-                className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-1 px-3 rounded text-sm"
-              >
-                Clear
-              </button>
-            </div>
-          )}
         </div>
+
+        {(filterSearch || filterStaff || filterMainCategory || filterSubCategory || filterDateFrom || filterDateTo) && (
+          <div className="flex justify-end">
+            <button
+              onClick={() => {
+                setFilterSearch('');
+                setFilterStaff('');
+                setFilterMainCategory('');
+                setFilterSubCategory('');
+                setFilterDateFrom('');
+                setFilterDateTo('');
+              }}
+              className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-1 px-4 rounded text-sm"
+            >
+              Clear Filters
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -143,6 +243,9 @@ export function AccomplishmentsTable({ accomplishments, onDelete }: Accomplishme
                   Category
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
+                  Sub-Category
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
                   Description
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700">
@@ -153,7 +256,7 @@ export function AccomplishmentsTable({ accomplishments, onDelete }: Accomplishme
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500 text-sm">
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500 text-sm">
                     No entries match these filters
                   </td>
                 </tr>
@@ -166,6 +269,7 @@ export function AccomplishmentsTable({ accomplishments, onDelete }: Accomplishme
                     <td className="px-4 py-3 text-sm font-medium text-slate-900">
                       {a.staff_name}
                     </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{getMainCategory(a.category)}</td>
                     <td className="px-4 py-3 text-sm text-slate-600">{a.category}</td>
                     <td className="px-4 py-3 text-sm text-slate-700 max-w-xs truncate">
                       {a.description}

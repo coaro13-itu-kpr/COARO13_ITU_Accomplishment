@@ -7,19 +7,61 @@ import { AccomplishmentsTable } from './accomplishments-table';
 import { ReportsPanel } from './reports-panel';
 import { SignOutButton } from './sign-out-button';
 
-const CATEGORIES = [
-  'Systems Development & Maintenance',
-  'Network & Infrastructure',
-  'Hardware & Technical Support',
-  'Software Installation & Troubleshooting',
-  'Data Management & Reporting',
-  'Cybersecurity',
-  'Website & Portal Management',
-  'ICT Training & Capacity Building',
-  'Documentation',
-  'Meetings & Coordination',
-  'Other',
-];
+const CATEGORIES: { [key: string]: string[] } = {
+  'Technical Services': [
+    'Technical Review and Inspection',
+    'Property Appraisal',
+    'Submission of Annual Audit Reports for Publication',
+    'Submission of Compliance Audit Reports for Publication',
+    'Submission of SALN of all COA Caraga Personnel',
+    'Other Technical Audit Activities',
+  ],
+  'General Administration and Support': [
+    'Assistance in defining IT specifications',
+    'Server Administration and Maintenance',
+    'Network Administration and Maintenance',
+    'Voice over Internet Protocol (VoIP) installation/configuration, administration and maintenance',
+    'Internet configuration, connection and other technical assistance related to internet',
+    'Database backup',
+    'Biometric Machine Maintenance and System Administration',
+    'Troubleshooting - Network Printing Problems',
+    'Troubleshooting - Microsoft Office Problems',
+    'Troubleshooting - Computer Virus Problems',
+    'Troubleshooting - Operating System Problems',
+    'Troubleshooting - Access Point Problems',
+    'Troubleshooting - Local Area Network Problems',
+    'Troubleshooting - CAMS Problems',
+    'Troubleshooting - VoIP Problems',
+    'Troubleshooting - Internet Connectivity Problems',
+    'Troubleshooting - Daily Time Record Updating',
+    'Troubleshooting - Initial Setup of New Desktop/Laptop',
+    'Troubleshooting - Cashier System (WINACIC DISC System) Problems',
+    'Website Content Management',
+    'Walk-in client queries',
+    'Others',
+  ],
+  'eNGAS and eBudget': [
+    'eNGAS and eBudget Support',
+    'eNGAS and eBudget Roll-out',
+  ],
+  'Support during Meetings/Events': [
+    'Setup Audio/Visual/Zoom Meetings',
+  ],
+  'Other Activities/Special Assignments': [
+    'Resource Person/Assistant RPs for eNGAS and eBudget Functional Training and Other IT Trainings',
+  ],
+};
+
+const STAFF_NAMES: { [key: string]: string } = {
+  '0283363': 'Keith P. Rabina',
+  '0229296': 'Efren L. Soliva',
+};
+
+function getStaffName(user: any): string {
+  const email = user?.email || '';
+  const employeeId = email.split('@')[0];
+  return STAFF_NAMES[employeeId] || user?.user_metadata?.full_name || email;
+}
 
 interface Accomplishment {
   id: string;
@@ -139,7 +181,7 @@ export default function AccomplishmentsView({ user }: { user: any }) {
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-sm font-medium text-slate-700">{user.email}</p>
+              <p className="text-sm font-medium text-slate-700">{user.id}</p>
             </div>
             <SignOutButton />
           </div>
@@ -199,6 +241,7 @@ export default function AccomplishmentsView({ user }: { user: any }) {
             {activeTab === 'log' && (
               <AccomplishmentForm
                 user={user}
+                staffName={getStaffName(user)}
                 categories={CATEGORIES}
                 onSubmit={handleAddAccomplishment}
               />

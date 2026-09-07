@@ -4,22 +4,30 @@ import { FormEvent, useState } from 'react';
 
 interface AccomplishmentFormProps {
   user: any;
-  categories: string[];
+  staffName: string;
+  categories: { [key: string]: string[] };
   onSubmit: (data: any) => Promise<void>;
 }
 
-export function AccomplishmentForm({ user, categories, onSubmit }: AccomplishmentFormProps) {
-  const [staffName, setStaffName] = useState('');
+export function AccomplishmentForm({ user, staffName, categories, onSubmit }: AccomplishmentFormProps) {
+  const categoryKeys = Object.keys(categories);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [category, setCategory] = useState(categories[0]);
+  const [mainCategory, setMainCategory] = useState(categoryKeys[0]);
+  const [subCategory, setSubCategory] = useState(categories[categoryKeys[0]][0]);
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
 
+  function handleMainCategoryChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const category = e.target.value;
+    setMainCategory(category);
+    setSubCategory(categories[category][0]);
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!staffName.trim() || !description.trim()) {
+    if (!staffName.trim() || !description.trim() || !subCategory) {
       setSubmitMessage('Please fill in all fields');
       return;
     }
@@ -31,13 +39,13 @@ export function AccomplishmentForm({ user, categories, onSubmit }: Accomplishmen
       await onSubmit({
         staff_name: staffName.trim(),
         accomplishment_date: date,
-        category,
+        category: subCategory,
         description: description.trim(),
       });
 
-      setStaffName('');
       setDate(new Date().toISOString().split('T')[0]);
-      setCategory(categories[0]);
+      setMainCategory(categoryKeys[0]);
+      setSubCategory(categories[categoryKeys[0]][0]);
       setDescription('');
       setSubmitMessage('Accomplishment logged successfully');
       setTimeout(() => setSubmitMessage(''), 3000);
@@ -61,10 +69,8 @@ export function AccomplishmentForm({ user, categories, onSubmit }: Accomplishmen
             <input
               type="text"
               value={staffName}
-              onChange={(e) => setStaffName(e.target.value)}
-              placeholder="e.g. Juan Dela Cruz"
-              disabled={submitting}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-50"
+              readOnly
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-600 cursor-not-allowed"
             />
           </div>
 
@@ -78,18 +84,36 @@ export function AccomplishmentForm({ user, categories, onSubmit }: Accomplishmen
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-50"
             />
           </div>
+        </div>
 
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
             <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              value={mainCategory}
+              onChange={handleMainCategoryChange}
               disabled={submitting}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-50"
             >
-              {categories.map((cat) => (
+              {categoryKeys.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Sub-Category</label>
+            <select
+              value={subCategory}
+              onChange={(e) => setSubCategory(e.target.value)}
+              disabled={submitting}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-50"
+            >
+              {categories[mainCategory].map((subCat) => (
+                <option key={subCat} value={subCat}>
+                  {subCat}
                 </option>
               ))}
             </select>

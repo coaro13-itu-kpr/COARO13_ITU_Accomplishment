@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { generateExcelReport, downloadExcelReport } from '@/lib/excel-export';
 
 interface Accomplishment {
   id: string;
@@ -15,7 +16,7 @@ interface ReportsPanelProps {
   accomplishments: Accomplishment[];
 }
 
-type PeriodType = 'week' | 'month' | 'quarter' | 'year';
+type PeriodType = 'semester' | 'month' | 'quarter' | 'year';
 
 export function ReportsPanel({ accomplishments }: ReportsPanelProps) {
   const [periodType, setPeriodType] = useState<PeriodType>('month');
@@ -25,11 +26,15 @@ export function ReportsPanel({ accomplishments }: ReportsPanelProps) {
     const d = new Date(date);
     let start, end;
 
-    if (type === 'week') {
-      const day = d.getDay();
-      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-      start = new Date(d.setDate(diff));
-      end = new Date(new Date(start).setDate(start.getDate() + 6));
+    if (type === 'semester') {
+      const month = d.getMonth();
+      if (month < 6) {
+        start = new Date(d.getFullYear(), 0, 1);
+        end = new Date(d.getFullYear(), 5, 30);
+      } else {
+        start = new Date(d.getFullYear(), 6, 1);
+        end = new Date(d.getFullYear(), 11, 31);
+      }
     } else if (type === 'month') {
       start = new Date(d.getFullYear(), d.getMonth(), 1);
       end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
@@ -49,10 +54,9 @@ export function ReportsPanel({ accomplishments }: ReportsPanelProps) {
     const [start] = getPeriodRange(type, date);
     const d = new Date(start);
 
-    if (type === 'week') {
-      const end = new Date(d);
-      end.setDate(end.getDate() + 6);
-      return `Week of ${d.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+    if (type === 'semester') {
+      const semester = d.getMonth() < 6 ? '1st' : '2nd';
+      return `${semester} Semester ${d.getFullYear()}`;
     } else if (type === 'month') {
       return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     } else if (type === 'quarter') {
@@ -96,7 +100,7 @@ export function ReportsPanel({ accomplishments }: ReportsPanelProps) {
       <div className="bg-white rounded-lg border border-slate-200 p-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex gap-2">
-            {(['week', 'month', 'quarter', 'year'] as PeriodType[]).map((p) => (
+            {(['month', 'quarter', 'semester', 'year'] as PeriodType[]).map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriodType(p)}
@@ -106,7 +110,7 @@ export function ReportsPanel({ accomplishments }: ReportsPanelProps) {
                     : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
                 }`}
               >
-                {p.charAt(0).toUpperCase() + p.slice(1)}
+                {p === 'semester' ? 'Semester' : p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             ))}
           </div>
@@ -115,7 +119,7 @@ export function ReportsPanel({ accomplishments }: ReportsPanelProps) {
             <button
               onClick={() => {
                 const d = new Date(periodDate);
-                if (periodType === 'week') d.setDate(d.getDate() - 7);
+                if (periodType === 'semester') d.setMonth(d.getMonth() - 6);
                 else if (periodType === 'month') d.setMonth(d.getMonth() - 1);
                 else if (periodType === 'quarter') d.setMonth(d.getMonth() - 3);
                 else d.setFullYear(d.getFullYear() - 1);
@@ -133,7 +137,7 @@ export function ReportsPanel({ accomplishments }: ReportsPanelProps) {
             <button
               onClick={() => {
                 const d = new Date(periodDate);
-                if (periodType === 'week') d.setDate(d.getDate() + 7);
+                if (periodType === 'semester') d.setMonth(d.getMonth() + 6);
                 else if (periodType === 'month') d.setMonth(d.getMonth() + 1);
                 else if (periodType === 'quarter') d.setMonth(d.getMonth() + 3);
                 else d.setFullYear(d.getFullYear() + 1);
@@ -233,8 +237,9 @@ export function ReportsPanel({ accomplishments }: ReportsPanelProps) {
         )}
       </div>
 
-      {/* Export button */}
-      <div className="flex justify-end">
+      {/* Export buttons - Hidden for now */}
+      {/*
+      <div className="flex justify-end gap-3">
         <button
           onClick={() => {
             const csv = [
@@ -259,11 +264,30 @@ export function ReportsPanel({ accomplishments }: ReportsPanelProps) {
             a.click();
             window.URL.revokeObjectURL(url);
           }}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+          className="bg-slate-600 hover:bg-slate-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
         >
           Export as CSV
         </button>
+
+        <button
+          onClick={() => {
+            const excelContent = generateExcelReport(
+              periodAccomplishments,
+              getPeriodLabel(periodType, periodDate),
+              periodType
+            );
+            downloadExcelReport(
+              excelContent,
+              getPeriodLabel(periodType, periodDate),
+              periodType
+            );
+          }}
+          className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+        >
+          Export as Excel
+        </button>
       </div>
+      */}
     </div>
   );
 }

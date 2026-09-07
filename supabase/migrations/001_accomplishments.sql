@@ -23,10 +23,7 @@ create policy "Anyone authenticated can view accomplishments"
 create policy "Users can insert their own accomplishments"
   on public.accomplishments
   for insert
-  with check (
-    auth.uid() = user_id or
-    (select count(*) from auth.users where id = auth.uid()) > 0
-  );
+  with check (auth.uid() = user_id);
 
 -- RLS Policy: Users can only update their own accomplishments
 create policy "Users can update their own accomplishments"
