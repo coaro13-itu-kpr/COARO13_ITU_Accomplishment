@@ -166,9 +166,14 @@ export default function AccomplishmentsView({ user }: { user: any }) {
     }
   }
 
-  async function handleUpdateAccomplishment(id: string, data: Omit<Accomplishment, 'id' | 'user_id' | 'created_at'>) {
+  async function handleUpdateAccomplishment(
+    id: string,
+    data: Omit<Accomplishment, 'id' | 'user_id' | 'created_at'>,
+    supervised?: boolean
+  ) {
     try {
       setError(null);
+
       const { error: updateError } = await supabase
         .from('accomplishments')
         .update(data)
@@ -177,6 +182,31 @@ export default function AccomplishmentsView({ user }: { user: any }) {
       if (updateError) {
         setError(updateError.message);
         return;
+      }
+
+      const current = accomplishments.find((a) => a.id === id);
+      if (current && current.staff_name !== 'Efren L. Soliva') {
+        const efrenEntry = accomplishments.find(
+          (a) =>
+            a.staff_name === 'Efren L. Soliva' &&
+            a.accomplishment_date === current.accomplishment_date &&
+            a.category === current.category &&
+            a.description.startsWith('[Supervised]')
+        );
+
+        if (supervised && !efrenEntry) {
+          await supabase.from('accomplishments').insert([
+            {
+              staff_name: 'Efren L. Soliva',
+              accomplishment_date: data.accomplishment_date,
+              category: data.category,
+              description: `[Supervised] ${data.description}`,
+              user_id: user.id,
+            },
+          ]);
+        } else if (!supervised && efrenEntry) {
+          await supabase.from('accomplishments').delete().eq('id', efrenEntry.id);
+        }
       }
 
       await loadAccomplishments();

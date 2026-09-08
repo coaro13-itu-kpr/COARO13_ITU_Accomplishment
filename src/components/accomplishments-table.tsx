@@ -14,7 +14,7 @@ interface Accomplishment {
 interface AccomplishmentsTableProps {
   accomplishments: Accomplishment[];
   onDelete: (id: string) => Promise<void>;
-  onUpdate: (id: string, data: Omit<Accomplishment, 'id' | 'created_at' | 'user_id'>) => Promise<void>;
+  onUpdate: (id: string, data: Omit<Accomplishment, 'id' | 'created_at' | 'user_id'>, supervised?: boolean) => Promise<void>;
   categories: { [key: string]: string[] };
 }
 
@@ -119,6 +119,21 @@ export function AccomplishmentsTable({ accomplishments, onDelete, onUpdate, cate
 
   function handleEditClick(accomplishment: Accomplishment) {
     const mainCat = getMainCategory(accomplishment.category);
+
+    let supervisedByEfren = false;
+    let descriptionForEdit = accomplishment.description;
+
+    if (accomplishment.staff_name !== 'Efren L. Soliva') {
+      const efrenEntry = accomplishments.find(
+        (a) =>
+          a.staff_name === 'Efren L. Soliva' &&
+          a.accomplishment_date === accomplishment.accomplishment_date &&
+          a.category === accomplishment.category &&
+          a.description.startsWith('[Supervised]')
+      );
+      supervisedByEfren = !!efrenEntry;
+    }
+
     setEditingId(accomplishment.id);
     setEditingData({
       accomplishment_date: accomplishment.accomplishment_date,
@@ -126,6 +141,7 @@ export function AccomplishmentsTable({ accomplishments, onDelete, onUpdate, cate
       category: accomplishment.category,
       description: accomplishment.description,
       staff_name: accomplishment.staff_name,
+      supervisedByEfren: supervisedByEfren,
     });
   }
 
@@ -135,12 +151,16 @@ export function AccomplishmentsTable({ accomplishments, onDelete, onUpdate, cate
     }
 
     try {
-      await onUpdate(editingId!, {
-        staff_name: editingData.staff_name,
-        accomplishment_date: editingData.accomplishment_date,
-        category: editingData.category,
-        description: editingData.description.trim(),
-      });
+      await onUpdate(
+        editingId!,
+        {
+          staff_name: editingData.staff_name,
+          accomplishment_date: editingData.accomplishment_date,
+          category: editingData.category,
+          description: editingData.description.trim(),
+        },
+        editingData.supervisedByEfren
+      );
       setEditingId(null);
       setEditingData(null);
     } catch (err) {
@@ -449,6 +469,29 @@ export function AccomplishmentsTable({ accomplishments, onDelete, onUpdate, cate
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
                 />
               </div>
+
+              {editingData.staff_name !== 'Efren L. Soliva' && (
+                <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <input
+                    type="checkbox"
+                    id="editSupervisedByEfren"
+                    checked={editingData.supervisedByEfren || false}
+                    onChange={(e) =>
+                      setEditingData({ ...editingData, supervisedByEfren: e.target.checked })
+                    }
+                    className="w-4 h-4 cursor-pointer"
+                  />
+                  <label
+                    htmlFor="editSupervisedByEfren"
+                    className="text-sm font-medium text-slate-700 cursor-pointer"
+                  >
+                    Supervised by Efren L. Soliva
+                  </label>
+                  <span className="text-xs text-slate-500">
+                    (Also logs this accomplishment to Efren)
+                  </span>
+                </div>
+              )}
 
               <div className="flex gap-2 justify-end">
                 <button
