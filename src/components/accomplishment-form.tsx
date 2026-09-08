@@ -6,7 +6,7 @@ interface AccomplishmentFormProps {
   user: any;
   staffName: string;
   categories: { [key: string]: string[] };
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: any[]) => Promise<void>;
 }
 
 export function AccomplishmentForm({ user, staffName, categories, onSubmit }: AccomplishmentFormProps) {
@@ -15,6 +15,7 @@ export function AccomplishmentForm({ user, staffName, categories, onSubmit }: Ac
   const [mainCategory, setMainCategory] = useState(categoryKeys[0]);
   const [subCategory, setSubCategory] = useState(categories[categoryKeys[0]][0]);
   const [description, setDescription] = useState('');
+  const [supervisedByEfren, setSupervisedByEfren] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
 
@@ -36,17 +37,31 @@ export function AccomplishmentForm({ user, staffName, categories, onSubmit }: Ac
     setSubmitMessage('');
 
     try {
-      await onSubmit({
-        staff_name: staffName.trim(),
-        accomplishment_date: date,
-        category: subCategory,
-        description: description.trim(),
-      });
+      const entries = [
+        {
+          staff_name: staffName.trim(),
+          accomplishment_date: date,
+          category: subCategory,
+          description: description.trim(),
+        },
+      ];
+
+      if (supervisedByEfren) {
+        entries.push({
+          staff_name: 'Efren L. Soliva',
+          accomplishment_date: date,
+          category: subCategory,
+          description: `[Supervised] ${description.trim()}`,
+        });
+      }
+
+      await onSubmit(entries);
 
       setDate(new Date().toISOString().split('T')[0]);
       setMainCategory(categoryKeys[0]);
       setSubCategory(categories[categoryKeys[0]][0]);
       setDescription('');
+      setSupervisedByEfren(false);
       setSubmitMessage('Accomplishment logged successfully');
       setTimeout(() => setSubmitMessage(''), 3000);
     } catch (err) {
@@ -132,6 +147,23 @@ export function AccomplishmentForm({ user, staffName, categories, onSubmit }: Ac
             rows={4}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-50 font-sans"
           />
+        </div>
+
+        <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <input
+            type="checkbox"
+            id="supervisedByEfren"
+            checked={supervisedByEfren}
+            onChange={(e) => setSupervisedByEfren(e.target.checked)}
+            disabled={submitting}
+            className="w-4 h-4 cursor-pointer"
+          />
+          <label htmlFor="supervisedByEfren" className="text-sm font-medium text-slate-700 cursor-pointer">
+            Supervised by Efren L. Soliva
+          </label>
+          <span className="text-xs text-slate-500">
+            (Also logs this accomplishment to Efren)
+          </span>
         </div>
 
         <div className="flex items-center justify-between">

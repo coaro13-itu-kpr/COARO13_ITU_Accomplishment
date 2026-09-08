@@ -125,15 +125,15 @@ export default function AccomplishmentsView({ user }: { user: any }) {
     }
   }
 
-  async function handleAddAccomplishment(data: Omit<Accomplishment, 'id' | 'user_id' | 'created_at'>) {
+  async function handleAddAccomplishment(entries: Omit<Accomplishment, 'id' | 'user_id' | 'created_at'>[]) {
     try {
       setError(null);
-      const { error: insertError } = await supabase.from('accomplishments').insert([
-        {
-          ...data,
-          user_id: user.id,
-        },
-      ]);
+      const insertData = entries.map((data) => ({
+        ...data,
+        user_id: user.id,
+      }));
+
+      const { error: insertError } = await supabase.from('accomplishments').insert(insertData);
 
       if (insertError) {
         setError(insertError.message);
