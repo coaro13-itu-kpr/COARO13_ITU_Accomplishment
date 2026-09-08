@@ -22,6 +22,13 @@ export function ReportsPanel({ accomplishments }: ReportsPanelProps) {
   const [periodType, setPeriodType] = useState<PeriodType>('month');
   const [periodDate, setPeriodDate] = useState(new Date());
 
+  function dateToLocalString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   function getPeriodRange(type: PeriodType, date: Date) {
     const d = new Date(date);
     let start, end;
@@ -47,23 +54,20 @@ export function ReportsPanel({ accomplishments }: ReportsPanelProps) {
       end = new Date(d.getFullYear(), 11, 31);
     }
 
-    return [start.toISOString().split('T')[0], end.toISOString().split('T')[0]];
+    return [dateToLocalString(start), dateToLocalString(end)];
   }
 
   function getPeriodLabel(type: PeriodType, date: Date) {
-    const [start] = getPeriodRange(type, date);
-    const d = new Date(start);
-
     if (type === 'semester') {
-      const semester = d.getMonth() < 6 ? '1st' : '2nd';
-      return `${semester} Semester ${d.getFullYear()}`;
+      const semester = date.getMonth() < 6 ? '1st' : '2nd';
+      return `${semester} Semester ${date.getFullYear()}`;
     } else if (type === 'month') {
-      return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     } else if (type === 'quarter') {
-      const q = Math.floor(d.getMonth() / 3) + 1;
-      return `Q${q} ${d.getFullYear()}`;
+      const q = Math.floor(date.getMonth() / 3) + 1;
+      return `Q${q} ${date.getFullYear()}`;
     } else {
-      return String(d.getFullYear());
+      return String(date.getFullYear());
     }
   }
 
