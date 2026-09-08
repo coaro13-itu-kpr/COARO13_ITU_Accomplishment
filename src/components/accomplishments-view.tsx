@@ -170,6 +170,20 @@ export default function AccomplishmentsView({ user }: { user: any }) {
     try {
       setError(null);
 
+      const current = accomplishments.find((a) => a.id === id);
+
+      // Find existing Efren entry BEFORE updating (using current values)
+      const efrenEntry = current && current.staff_name !== 'Efren L. Soliva'
+        ? accomplishments.find(
+            (a) =>
+              a.staff_name === 'Efren L. Soliva' &&
+              a.accomplishment_date === current.accomplishment_date &&
+              a.category === current.category &&
+              a.description.startsWith('[Supervised]')
+          )
+        : null;
+
+      // Update the main entry
       const { error: updateError } = await supabase
         .from('accomplishments')
         .update(data)
@@ -180,17 +194,10 @@ export default function AccomplishmentsView({ user }: { user: any }) {
         return;
       }
 
-      const current = accomplishments.find((a) => a.id === id);
+      // Handle supervision status changes
       if (current && current.staff_name !== 'Efren L. Soliva') {
-        const efrenEntry = accomplishments.find(
-          (a) =>
-            a.staff_name === 'Efren L. Soliva' &&
-            a.accomplishment_date === current.accomplishment_date &&
-            a.category === current.category &&
-            a.description.startsWith('[Supervised]')
-        );
-
         if (supervised && !efrenEntry) {
+          // Create Efren entry if supervision is now enabled
           await supabase.from('accomplishments').insert([
             {
               staff_name: 'Efren L. Soliva',
@@ -201,6 +208,7 @@ export default function AccomplishmentsView({ user }: { user: any }) {
             },
           ]);
         } else if (!supervised && efrenEntry) {
+          // Delete Efren entry if supervision is now disabled
           await supabase.from('accomplishments').delete().eq('id', efrenEntry.id);
         }
       }
