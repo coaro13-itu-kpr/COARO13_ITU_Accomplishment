@@ -14,6 +14,8 @@ interface Accomplishment {
 interface AccomplishmentsTableProps {
   accomplishments: Accomplishment[];
   onDelete: (id: string) => Promise<void>;
+  onUpdate: (id: string, data: Omit<Accomplishment, 'id' | 'created_at' | 'user_id'>) => Promise<void>;
+  categories: { [key: string]: string[] };
 }
 
 const CATEGORIES: { [key: string]: string[] } = {
@@ -71,9 +73,11 @@ function getMainCategory(subCategory: string): string {
   return '';
 }
 
-export function AccomplishmentsTable({ accomplishments, onDelete }: AccomplishmentsTableProps) {
+export function AccomplishmentsTable({ accomplishments, onDelete, onUpdate, categories }: AccomplishmentsTableProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingData, setEditingData] = useState<any>(null);
   const [filterStaff, setFilterStaff] = useState('');
   const [filterMainCategory, setFilterMainCategory] = useState('');
   const [filterSubCategory, setFilterSubCategory] = useState('');
@@ -110,6 +114,37 @@ export function AccomplishmentsTable({ accomplishments, onDelete }: Accomplishme
       setConfirmDeleteId(null);
     } finally {
       setDeleting(false);
+    }
+  }
+
+  function handleEditClick(accomplishment: Accomplishment) {
+    const mainCat = getMainCategory(accomplishment.category);
+    setEditingId(accomplishment.id);
+    setEditingData({
+      accomplishment_date: accomplishment.accomplishment_date,
+      mainCategory: mainCat,
+      category: accomplishment.category,
+      description: accomplishment.description,
+      staff_name: accomplishment.staff_name,
+    });
+  }
+
+  async function handleEditSubmit() {
+    if (!editingData.description.trim() || !editingData.category) {
+      return;
+    }
+
+    try {
+      await onUpdate(editingId!, {
+        staff_name: editingData.staff_name,
+        accomplishment_date: editingData.accomplishment_date,
+        category: editingData.category,
+        description: editingData.description.trim(),
+      });
+      setEditingId(null);
+      setEditingData(null);
+    } catch (err) {
+      console.error('Failed to update accomplishment', err);
     }
   }
 
@@ -294,12 +329,20 @@ export function AccomplishmentsTable({ accomplishments, onDelete }: Accomplishme
                           </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => setConfirmDeleteId(a.id)}
-                          className="text-red-600 hover:text-red-700 font-medium text-xs"
-                        >
-                          Delete
-                        </button>
+                        <div className="flex gap-2 justify-center">
+                          <button
+                            onClick={() => handleEditClick(a)}
+                            className="text-blue-600 hover:text-blue-700 font-medium text-xs"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(a.id)}
+                            className="text-red-600 hover:text-red-700 font-medium text-xs"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -313,6 +356,121 @@ export function AccomplishmentsTable({ accomplishments, onDelete }: Accomplishme
       <p className="text-xs text-slate-500 text-center">
         Showing {filtered.length} of {accomplishments.length} entries
       </p>
+
+      {/* Edit Modal */}
+      {editingId && editingData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Edit Accomplishment</h3>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editingData.accomplishment_date}
+                    onChange={(e) =>
+                      setEditingData({ ...editingData, accomplishment_date: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Staff Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editingData.staff_name}
+                    disabled
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-600 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={editingData.mainCategory}
+                    onChange={(e) => {
+                      const mainCat = e.target.value;
+                      setEditingData({
+                        ...editingData,
+                        mainCategory: mainCat,
+                        category: categories[mainCat][0],
+                      });
+                    }}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {Object.keys(categories).map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Sub-Category
+                  </label>
+                  <select
+                    value={editingData.category}
+                    onChange={(e) =>
+                      setEditingData({ ...editingData, category: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {categories[editingData.mainCategory].map((subCat) => (
+                      <option key={subCat} value={subCat}>
+                        {subCat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={editingData.description}
+                  onChange={(e) =>
+                    setEditingData({ ...editingData, description: e.target.value })
+                  }
+                  rows={4}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => {
+                    setEditingId(null);
+                    setEditingData(null);
+                  }}
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2 px-6 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditSubmit}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

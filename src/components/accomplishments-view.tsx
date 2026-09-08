@@ -166,6 +166,25 @@ export default function AccomplishmentsView({ user }: { user: any }) {
     }
   }
 
+  async function handleUpdateAccomplishment(id: string, data: Omit<Accomplishment, 'id' | 'user_id' | 'created_at'>) {
+    try {
+      setError(null);
+      const { error: updateError } = await supabase
+        .from('accomplishments')
+        .update(data)
+        .eq('id', id);
+
+      if (updateError) {
+        setError(updateError.message);
+        return;
+      }
+
+      await loadAccomplishments();
+    } catch (err) {
+      setError('Failed to update accomplishment');
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
@@ -252,6 +271,8 @@ export default function AccomplishmentsView({ user }: { user: any }) {
               <AccomplishmentsTable
                 accomplishments={accomplishments}
                 onDelete={handleDeleteAccomplishment}
+                onUpdate={handleUpdateAccomplishment}
+                categories={CATEGORIES}
               />
             )}
 
