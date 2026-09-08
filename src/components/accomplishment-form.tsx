@@ -149,22 +149,24 @@ export function AccomplishmentForm({ user, staffName, categories, onSubmit }: Ac
           />
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
-          <input
-            type="checkbox"
-            id="supervisedByEfren"
-            checked={supervisedByEfren}
-            onChange={(e) => setSupervisedByEfren(e.target.checked)}
-            disabled={submitting}
-            className="w-4 h-4 cursor-pointer"
-          />
-          <label htmlFor="supervisedByEfren" className="text-sm font-medium text-slate-700 cursor-pointer">
-            Supervised by Efren L. Soliva
-          </label>
-          <span className="text-xs text-slate-500">
-            (Also logs this accomplishment to Efren)
-          </span>
-        </div>
+        {staffName !== 'Efren L. Soliva' && (
+          <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <input
+              type="checkbox"
+              id="supervisedByEfren"
+              checked={supervisedByEfren}
+              onChange={(e) => setSupervisedByEfren(e.target.checked)}
+              disabled={submitting}
+              className="w-4 h-4 cursor-pointer"
+            />
+            <label htmlFor="supervisedByEfren" className="text-sm font-medium text-slate-700 cursor-pointer">
+              Supervised by Efren L. Soliva
+            </label>
+            <span className="text-xs text-slate-500">
+              (Also logs this accomplishment to Efren)
+            </span>
+          </div>
+        )}
 
         <div className="flex items-center justify-between">
           <button
