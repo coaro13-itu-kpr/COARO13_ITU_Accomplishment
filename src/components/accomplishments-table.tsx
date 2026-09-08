@@ -45,6 +45,7 @@ const CATEGORIES: { [key: string]: string[] } = {
     'Troubleshooting - Daily Time Record Updating',
     'Troubleshooting - Initial Setup of New Desktop/Laptop',
     'Troubleshooting - Cashier System (WINACIC DISC System) Problems',
+    'Troubleshooting - Issues with Developed Information Systems',
     'Website Content Management',
     'Walk-in client queries',
     'Others',
